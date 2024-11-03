@@ -6,7 +6,7 @@ import plotly.graph_objects as go
 st.title("Projeção de Erros por Semana")
 
 # 2. Carregar dados históricos de erros
-file_path = "C:\\Projeto Python\\pythonProjectSonarqube\\dados_consulta.xlsx"
+file_path = "dados_consulta.xlsx"
 df = pd.read_excel(file_path, sheet_name="Resultado da consulta")
 
 # 3. Converter coluna de datas para o tipo datetime
