@@ -5,22 +5,22 @@ import plotly.graph_objects as go
 
 st.title("Projeção de Erros por Semana")
 
-# 2. Carregar dados históricos de erros
+st.write("É feito a leitura dos dados históricos de erros que esta disponibilizado na forma de uma planilha '.xlsx'")
 file_path = "dados_consulta.xlsx"
 df = pd.read_excel(file_path, sheet_name="Resultado da consulta")
 
-# 3. Converter coluna de datas para o tipo datetime
+st.write("Converter coluna de datas para o tipo datetime")
 df['issue_creation_date'] = pd.to_datetime(df['issue_creation_date'])
 
-# 4. Filtra dados por autor
+st.write("Filtra dados por autor, de acordo com a coluna 'author_login'")
 unique_authors = df['author_login'].unique()
-# Seleção autores específicos para análise
+st.write("Seleção autores específicos para análise")
 selected_authors = st.multiselect("Selecione os Autores", options=unique_authors, default=unique_authors.tolist())
 # Filtra o DataFrame para conter apenas as issues dos autores selecionados
 df_filtered = df[df['author_login'].isin(selected_authors)]
 
-# 5. Contagem de issues abertas e fechadas com base nos autores selecionados
-# Issues abertas (status "OPEN") e fechadas (status "CLOSED")
+st.write("Contagem de issues abertas e fechadas com base nos autores selecionados")
+st.write("Issues abertas (status 'OPEN') e fechadas (status 'CLOSED')")
 issues_abertas = df_filtered[df_filtered['status'] == 'OPEN'].shape[0]
 issues_fechadas = df_filtered[df_filtered['status'] == 'CLOSED'].shape[0]
 
@@ -28,14 +28,14 @@ issues_fechadas = df_filtered[df_filtered['status'] == 'CLOSED'].shape[0]
 st.metric("Total de Issues Abertas", issues_abertas)
 st.metric("Total de Issues Fechadas", issues_fechadas)
 
-# 6. Calcula a média semanal de issues abertas e fechadas
-# Converte a data de criação da issue para um período semanal
+st.write("Calcula a média semanal de issues abertas e fechadas")
+st.write("Converte a data de criação da issue para um período semanal")
 df_filtered['week'] = df_filtered['issue_creation_date'].dt.to_period('W')
-# Conta o número de issues abertas por semana e preenche semanas sem issues com zero
+st.write("Conta o número de issues abertas por semana e preenche semanas sem issues com zero")
 erros_abertos_por_semana = df_filtered[df_filtered['status'] == 'OPEN'].groupby('week').size().reindex(pd.period_range(df_filtered['week'].min(), df_filtered['week'].max(), freq='W'), fill_value=0)
-# Conta o número de issues fechadas por semana e preenche semanas sem issues com zero
+st.write("Conta o número de issues fechadas por semana e preenche semanas sem issues com zero")
 erros_fechados_por_semana = df_filtered[df_filtered['status'] == 'CLOSED'].groupby('week').size().reindex(pd.period_range(df_filtered['week'].min(), df_filtered['week'].max(), freq='W'), fill_value=0)
-# Calcula a média de issues abertas e fechadas por semana
+st.write("Calcula a média de issues abertas e fechadas por semana")
 media_abertos_por_semana = erros_abertos_por_semana.mean()
 media_fechados_por_semana = erros_fechados_por_semana.mean()
 
@@ -48,20 +48,20 @@ num_semanas = st.slider("Projeção para Semanas Futuras", min_value=1, max_valu
 # Listas para armazenar os resultados das simulações
 simulacoes_abertos = []
 simulacoes_fechados = []
+st.write("simulação aleatória baseada na média de issues abertas e fechadas por semana utilizando a distribuição de Poisson")
 for _ in range(num_simulacoes):
-    # Gera uma simulação aleatória baseada na média de issues abertas e fechadas por semana
     simulacao_abertos = np.random.poisson(media_abertos_por_semana, num_semanas)
     simulacao_fechados = np.random.poisson(media_fechados_por_semana, num_semanas)
     simulacoes_abertos.append(simulacao_abertos)
     simulacoes_fechados.append(simulacao_fechados)
 
 # 9. Cálculo da média das simulações para cada semana projetada
-# Calcula a média dos resultados de todas as simulações para cada semana futura
+st.write("Calcula a média dos resultados de todas as simulações para cada semana futura")
 media_simulacoes_abertos = np.mean(simulacoes_abertos, axis=0)
 media_simulacoes_fechados = np.mean(simulacoes_fechados, axis=0)
 
 # 10. Cálculo do valor total estimado de issues abertas e fechadas
-# Soma o valor atual de issues abertas e fechadas com as projeções para obter o total estimado
+st.write("Soma o valor atual de issues abertas e fechadas com as projeções para obter o total estimado")
 total_est_issues_abertas = issues_abertas + np.sum(media_simulacoes_abertos)
 total_est_issues_fechadas = issues_fechadas + np.sum(media_simulacoes_fechados)
 
@@ -70,7 +70,9 @@ st.metric("Total Estimado de Issues Abertas", int(total_est_issues_abertas))
 st.metric("Total Estimado de Issues Fechadas", int(total_est_issues_fechadas))
 
 # 11. Gráfico acumulado da projeção de novos erros abertos e fechados
-# Cria uma figura usando Plotly para exibir o crescimento acumulado das issues abertas e fechadas
+st.write("Gráfico usando Plotly para exibir o valor acumulado das issues abertas e fechadas")
+st.write(" 'x' é uma lista de numeros inteiros que representa o numero de semanas")
+st.write(" 'y' é o valor acumulado de issues")
 fig_acumulado = go.Figure()
 fig_acumulado.add_trace(go.Scatter(
     x=list(range(1, num_semanas + 1)),
@@ -97,7 +99,7 @@ fig_acumulado.update_layout(
 st.plotly_chart(fig_acumulado)
 
 # 12. Gráfico da projeção semanal de novas issues abertas
-# Cria uma figura para exibir a projeção semanal de novas issues abertas
+st.write("Projeção semanal / valores medios simulados de novas isseus abertas")
 fig_abertas_semanal = go.Figure()
 fig_abertas_semanal.add_trace(go.Scatter(
     x=list(range(1, num_semanas + 1)),
@@ -115,7 +117,7 @@ fig_abertas_semanal.update_layout(
 # Renderiza o gráfico de novas issues abertas no Streamlit
 st.plotly_chart(fig_abertas_semanal)
 
-# 13. Gráfico da projeção semanal de issues fechadas
+st.write("Projeção semanal / valores medios simulados de novas isseus Fechadas")
 fig_fechadas_semanal = go.Figure()
 fig_fechadas_semanal.add_trace(go.Scatter(
     x=list(range(1, num_semanas + 1)),
